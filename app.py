@@ -17,6 +17,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "clube.db")
 
 # Senha do painel administrativo (hardcoded conforme solicitado)
 ADMIN_PASSWORD = "1986"
+DIRETORIA_PASSWORD = "Embaixadores@10"
 
 # Informações do clube
 CLUBE = {
@@ -26,6 +27,9 @@ CLUBE = {
 
 # Unidades que ENTRAM no ranking público (somente desbravadores)
 UNIDADES_DESBRAVADORES = ["Lobo", "Guepardo", "Seda Azul"]
+
+# Unidades da DIRETORIA (ranking separado)
+UNIDADES_DIRETORIA = ["Monarca", "Gorila"]
 
 
 # ----------------------------------------------------------------------------
@@ -67,6 +71,17 @@ def init_db():
             motivo TEXT NOT NULL,
             data TEXT NOT NULL,
             FOREIGN KEY (desbravador_id) REFERENCES desbravadores (id)
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS recados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo TEXT NOT NULL,
+            texto TEXT NOT NULL,
+            autor TEXT,
+            data TEXT NOT NULL
         )
         """
     )
@@ -121,15 +136,47 @@ def index():
         UNIDADES_DESBRAVADORES,
     ).fetchone()["s"]
 
+    # Ranking SEPARADO da diretoria (Monarca, Gorila) — protegido por senha
+    dir_liberado = session.get("dir_ok", False)
+    diretoria = []
+    if dir_liberado:
+        ph_dir = ",".join("?" for _ in UNIDADES_DIRETORIA)
+        diretoria = db.execute(
+            f"SELECT * FROM desbravadores WHERE unidade IN ({ph_dir}) "
+            "ORDER BY pontuacao_total DESC, nome ASC",
+            UNIDADES_DIRETORIA,
+        ).fetchall()
+
+    # Recados públicos (mais recentes primeiro)
+    recados = db.execute(
+        "SELECT * FROM recados ORDER BY id DESC LIMIT 30"
+    ).fetchall()
+
     return render_template(
         "index.html",
         clube=CLUBE,
         desbravadores=desbravadores,
+        diretoria=diretoria,
         unidades=UNIDADES_DESBRAVADORES,
+        unidades_diretoria=UNIDADES_DIRETORIA,
         filtro=filtro,
         total_part=total_part,
         total_pts=total_pts,
+        recados=recados,
+        dir_liberado=dir_liberado,
     )
+
+
+# ----------------------------------------------------------------------------
+# ACESSO AO RANKING DA DIRETORIA (senha pública restrita)
+# ----------------------------------------------------------------------------
+@app.route("/diretoria/entrar", methods=["POST"])
+def diretoria_entrar():
+    if request.form.get("senha") == DIRETORIA_PASSWORD:
+        session["dir_ok"] = True
+    else:
+        flash("Senha da diretoria incorreta.", "erro_dir")
+    return redirect(url_for("index", _anchor="aba-dir") + "#diretoria")
 
 
 # ----------------------------------------------------------------------------
@@ -155,11 +202,12 @@ def admin():
 @login_required
 def painel():
     db = get_db()
-    placeholders = ",".join("?" for _ in UNIDADES_DESBRAVADORES)
+    todas_unidades = UNIDADES_DESBRAVADORES + UNIDADES_DIRETORIA
+    ph = ",".join("?" for _ in todas_unidades)
     desbravadores = db.execute(
-        f"SELECT * FROM desbravadores WHERE unidade IN ({placeholders}) "
+        f"SELECT * FROM desbravadores WHERE unidade IN ({ph}) "
         "ORDER BY nome ASC",
-        UNIDADES_DESBRAVADORES,
+        todas_unidades,
     ).fetchall()
 
     historico = db.execute(
@@ -171,12 +219,18 @@ def painel():
         """
     ).fetchall()
 
+    recados = db.execute(
+        "SELECT * FROM recados ORDER BY id DESC LIMIT 30"
+    ).fetchall()
+
     return render_template(
         "admin.html",
         clube=CLUBE,
         desbravadores=desbravadores,
         unidades=UNIDADES_DESBRAVADORES,
+        unidades_diretoria=UNIDADES_DIRETORIA,
         historico=historico,
+        recados=recados,
     )
 
 
@@ -185,8 +239,9 @@ def painel():
 def cadastrar():
     nome = request.form.get("nome", "").strip()
     unidade = request.form.get("unidade", "").strip()
+    todas_unidades = UNIDADES_DESBRAVADORES + UNIDADES_DIRETORIA
 
-    if not nome or unidade not in UNIDADES_DESBRAVADORES:
+    if not nome or unidade not in todas_unidades:
         flash("Preencha nome e selecione uma unidade válida.", "erro")
         return redirect(url_for("painel"))
 
@@ -196,7 +251,8 @@ def cadastrar():
         (nome, unidade),
     )
     db.commit()
-    flash(f"Desbravador '{nome}' cadastrado na unidade {unidade}!", "ok")
+    rotulo = "Diretoria" if unidade in UNIDADES_DIRETORIA else "Desbravador"
+    flash(f"{rotulo} '{nome}' cadastrado na unidade {unidade}!", "ok")
     return redirect(url_for("painel"))
 
 
@@ -269,6 +325,38 @@ def limpar_tudo():
     db.execute("DELETE FROM desbravadores")
     db.commit()
     flash("Todos os desbravadores e pontos foram removidos. Comece do zero!", "ok")
+    return redirect(url_for("painel"))
+
+
+@app.route("/admin/recado", methods=["POST"])
+@login_required
+def recado():
+    texto = request.form.get("texto", "").strip()
+    tipo = request.form.get("tipo", "elogio").strip()
+    autor = request.form.get("autor", "").strip() or "Diretoria"
+    if tipo not in ("elogio", "melhoria"):
+        tipo = "elogio"
+    if not texto:
+        flash("Escreva o recado antes de publicar.", "erro")
+        return redirect(url_for("painel"))
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO recados (tipo, texto, autor, data) VALUES (?, ?, ?, ?)",
+        (tipo, texto, autor, datetime.now().strftime("%d/%m/%Y")),
+    )
+    db.commit()
+    flash("Recado publicado no site!", "ok")
+    return redirect(url_for("painel"))
+
+
+@app.route("/admin/recado/excluir/<int:recado_id>", methods=["POST"])
+@login_required
+def excluir_recado(recado_id):
+    db = get_db()
+    db.execute("DELETE FROM recados WHERE id = ?", (recado_id,))
+    db.commit()
+    flash("Recado removido.", "ok")
     return redirect(url_for("painel"))
 
 
