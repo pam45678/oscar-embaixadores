@@ -238,6 +238,40 @@ def lancar():
     return redirect(url_for("painel"))
 
 
+@app.route("/admin/excluir/<int:desbravador_id>", methods=["POST"])
+@login_required
+def excluir(desbravador_id):
+    db = get_db()
+    desb = db.execute(
+        "SELECT * FROM desbravadores WHERE id = ?", (desbravador_id,)
+    ).fetchone()
+    if not desb:
+        flash("Desbravador não encontrado.", "erro")
+        return redirect(url_for("painel"))
+
+    nome = desb["nome"]
+    db.execute("DELETE FROM historico_pontos WHERE desbravador_id = ?", (desbravador_id,))
+    db.execute("DELETE FROM desbravadores WHERE id = ?", (desbravador_id,))
+    db.commit()
+    flash(f"Desbravador '{nome}' excluído.", "ok")
+    return redirect(url_for("painel"))
+
+
+@app.route("/admin/limpar-tudo", methods=["POST"])
+@login_required
+def limpar_tudo():
+    # Só executa se a confirmação for digitada corretamente
+    if request.form.get("confirmar", "").strip().upper() != "LIMPAR":
+        flash("Para limpar tudo, digite LIMPAR na confirmação.", "erro")
+        return redirect(url_for("painel"))
+    db = get_db()
+    db.execute("DELETE FROM historico_pontos")
+    db.execute("DELETE FROM desbravadores")
+    db.commit()
+    flash("Todos os desbravadores e pontos foram removidos. Comece do zero!", "ok")
+    return redirect(url_for("painel"))
+
+
 @app.route("/admin/sair")
 def sair():
     session.clear()
