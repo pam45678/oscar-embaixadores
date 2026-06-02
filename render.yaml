@@ -3,5 +3,5 @@ services:
     name: oscar-embaixadores
     runtime: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "pip install -r requirements.txt && python seed_real.py"
     startCommand: "gunicorn app:app"
