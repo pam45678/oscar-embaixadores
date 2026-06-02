@@ -212,10 +212,10 @@ def painel():
 
     historico = db.execute(
         """
-        SELECT h.pontos, h.motivo, h.data, d.nome, d.unidade
+        SELECT h.id, h.pontos, h.motivo, h.data, d.nome, d.unidade
         FROM historico_pontos h
         JOIN desbravadores d ON d.id = h.desbravador_id
-        ORDER BY h.id DESC LIMIT 15
+        ORDER BY h.id DESC LIMIT 30
         """
     ).fetchall()
 
@@ -291,6 +291,65 @@ def lancar():
     )
     db.commit()
     flash(f"{pontos:+d} pts lançados para {desb['nome']} ({motivo}).", "ok")
+    return redirect(url_for("painel"))
+
+
+@app.route("/admin/lancamento/editar/<int:lanc_id>", methods=["POST"])
+@login_required
+def editar_lancamento(lanc_id):
+    """Corrige um lançamento: ajusta o total pela diferença e atualiza o registro."""
+    try:
+        novos_pontos = int(request.form.get("pontos"))
+    except (TypeError, ValueError):
+        flash("Informe um valor de pontos válido.", "erro")
+        return redirect(url_for("painel"))
+
+    novo_motivo = request.form.get("motivo", "").strip()
+    if not novo_motivo:
+        flash("Informe o motivo do lançamento.", "erro")
+        return redirect(url_for("painel"))
+
+    db = get_db()
+    lanc = db.execute(
+        "SELECT * FROM historico_pontos WHERE id = ?", (lanc_id,)
+    ).fetchone()
+    if not lanc:
+        flash("Lançamento não encontrado.", "erro")
+        return redirect(url_for("painel"))
+
+    diferenca = novos_pontos - lanc["pontos"]
+    db.execute(
+        "UPDATE desbravadores SET pontuacao_total = pontuacao_total + ? WHERE id = ?",
+        (diferenca, lanc["desbravador_id"]),
+    )
+    db.execute(
+        "UPDATE historico_pontos SET pontos = ?, motivo = ? WHERE id = ?",
+        (novos_pontos, novo_motivo, lanc_id),
+    )
+    db.commit()
+    flash("Lançamento corrigido com sucesso.", "ok")
+    return redirect(url_for("painel"))
+
+
+@app.route("/admin/lancamento/excluir/<int:lanc_id>", methods=["POST"])
+@login_required
+def excluir_lancamento(lanc_id):
+    """Remove um lançamento e desconta os pontos dele do total."""
+    db = get_db()
+    lanc = db.execute(
+        "SELECT * FROM historico_pontos WHERE id = ?", (lanc_id,)
+    ).fetchone()
+    if not lanc:
+        flash("Lançamento não encontrado.", "erro")
+        return redirect(url_for("painel"))
+
+    db.execute(
+        "UPDATE desbravadores SET pontuacao_total = pontuacao_total - ? WHERE id = ?",
+        (lanc["pontos"], lanc["desbravador_id"]),
+    )
+    db.execute("DELETE FROM historico_pontos WHERE id = ?", (lanc_id,))
+    db.commit()
+    flash("Lançamento removido e pontos ajustados.", "ok")
     return redirect(url_for("painel"))
 
 

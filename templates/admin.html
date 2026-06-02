@@ -171,12 +171,32 @@
     {% if historico %}
     <div class="space-y-2">
       {% for h in historico %}
-      <div class="flex items-center justify-between gap-3 bg-black/30 rounded-xl px-4 py-3 border border-white/5">
-        <div class="min-w-0">
-          <p class="font-semibold truncate">{{ h.nome }} <span class="text-xs text-slate-500">· {{ h.unidade }}</span></p>
-          <p class="text-xs text-slate-400 truncate">{{ h.motivo }} · {{ h.data }}</p>
+      <div class="bg-black/30 rounded-xl px-4 py-3 border border-white/5">
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-semibold truncate">{{ h.nome }} <span class="text-xs text-slate-500">· {{ h.unidade }}</span></p>
+            <p class="text-xs text-slate-400 truncate">{{ h.motivo }} · {{ h.data }}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="font-display font-black text-lg {% if h.pontos >= 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ '%+d'|format(h.pontos) }}</span>
+            <button type="button" onclick="document.getElementById('edit-{{ h.id }}').classList.toggle('hidden')"
+              title="Editar" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-laranja/30 text-laranja-light transition text-sm">✏️</button>
+            <form method="POST" action="{{ url_for('excluir_lancamento', lanc_id=h.id) }}"
+              onsubmit="return confirm('Excluir este lançamento? Os pontos serão descontados do total.');">
+              <button type="submit" title="Excluir" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-500/30 text-red-400 transition text-sm">🗑️</button>
+            </form>
+          </div>
         </div>
-        <span class="shrink-0 font-display font-black text-lg {% if h.pontos >= 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ '%+d'|format(h.pontos) }}</span>
+        <!-- Form de edição inline -->
+        <form id="edit-{{ h.id }}" method="POST" action="{{ url_for('editar_lancamento', lanc_id=h.id) }}"
+          class="hidden mt-3 pt-3 border-t border-white/10 grid grid-cols-1 sm:grid-cols-12 gap-2">
+          <input type="number" name="pontos" value="{{ h.pontos }}" required
+            class="sm:col-span-3 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-center focus:outline-none focus:border-laranja transition">
+          <input type="text" name="motivo" value="{{ h.motivo }}" required placeholder="Motivo"
+            class="sm:col-span-6 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white focus:outline-none focus:border-laranja transition">
+          <button type="submit"
+            class="sm:col-span-3 py-2 rounded-lg bg-laranja text-black font-bold hover:brightness-110 transition text-sm">Salvar correção</button>
+        </form>
       </div>
       {% endfor %}
     </div>
