@@ -16,101 +16,205 @@
   <p class="mt-3 text-slate-300/80 text-sm sm:text-base tracking-wide">{{ clube.associacao }}</p>
 </header>
 
-<!-- Stats -->
-<section class="max-w-4xl mx-auto px-4 grid grid-cols-2 gap-3 sm:gap-4 mb-8">
-  <div class="glass card-glow rounded-2xl p-4 sm:p-5 text-center border border-white/5 rise">
-    <p class="text-3xl sm:text-4xl font-extrabold text-laranja-gold">{{ total_part }}</p>
-    <p class="text-[11px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">Desbravadores</p>
-  </div>
-  <div class="glass card-glow rounded-2xl p-4 sm:p-5 text-center border border-white/5 rise">
-    <p class="text-3xl sm:text-4xl font-extrabold text-roxo-light">{{ total_pts }}</p>
-    <p class="text-[11px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">Pontos em jogo</p>
+<!-- ABAS: Desbravadores / Diretoria -->
+<section class="max-w-4xl mx-auto px-4 mb-6">
+  <div class="glass rounded-2xl p-1.5 flex gap-1.5 border border-white/10">
+    <button onclick="mostrarAba('desb')" id="tab-desb"
+            class="flex-1 py-2.5 rounded-xl text-sm font-bold transition bg-laranja text-black shadow-lg shadow-laranja/30">
+      🏆 Desbravadores
+    </button>
+    <button onclick="mostrarAba('dir')" id="tab-dir"
+            class="flex-1 py-2.5 rounded-xl text-sm font-bold transition text-slate-300 hover:text-white">
+      👑 Diretoria
+    </button>
   </div>
 </section>
 
-<!-- Pódio -->
-{% if desbravadores|length >= 1 %}
-<section class="max-w-4xl mx-auto px-4 mb-10">
-  <div class="grid grid-cols-3 gap-2 sm:gap-4 items-end">
-    {% set medals = [
-      {'emoji':'🥈','ring':'ring-slate-300','h':'h-28 sm:h-36','order':'order-1'},
-      {'emoji':'🥇','ring':'ring-laranja-gold','h':'h-36 sm:h-48','order':'order-2'},
-      {'emoji':'🥉','ring':'ring-amber-700','h':'h-24 sm:h-32','order':'order-3'}
-    ] %}
-    {% set podium = [desbravadores[1] if desbravadores|length>1 else none, desbravadores[0], desbravadores[2] if desbravadores|length>2 else none] %}
-    {% for d in podium %}
-      {% set m = medals[loop.index0] %}
-      <div class="{{ m.order }} flex flex-col items-center">
-        {% if d %}
-        <div class="text-3xl sm:text-4xl mb-1">{{ m.emoji }}</div>
-        <div class="w-full glass rounded-t-2xl {{ m.h }} flex flex-col items-center justify-end p-3 ring-1 {{ m.ring }} card-glow rise">
-          <p class="font-bold text-sm sm:text-base text-center leading-tight truncate w-full">{{ d.nome }}</p>
-          <p class="text-[10px] sm:text-xs text-slate-400 mb-2">{{ d.unidade }}</p>
-          <p class="font-display font-black text-xl sm:text-2xl gold-text">{{ d.pontuacao_total }}</p>
+<!-- ====================== ABA DESBRAVADORES ====================== -->
+<div id="aba-desb">
+
+  <!-- Stats -->
+  <section class="max-w-4xl mx-auto px-4 grid grid-cols-2 gap-3 sm:gap-4 mb-8">
+    <div class="glass card-glow rounded-2xl p-4 sm:p-5 text-center border border-white/5 rise">
+      <p class="text-3xl sm:text-4xl font-extrabold text-laranja-gold">{{ total_part }}</p>
+      <p class="text-[11px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">Desbravadores</p>
+    </div>
+    <div class="glass card-glow rounded-2xl p-4 sm:p-5 text-center border border-white/5 rise">
+      <p class="text-3xl sm:text-4xl font-extrabold text-roxo-light">{{ total_pts }}</p>
+      <p class="text-[11px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">Pontos em jogo</p>
+    </div>
+  </section>
+
+  <!-- Pódio -->
+  {% if desbravadores|length >= 1 %}
+  <section class="max-w-4xl mx-auto px-4 mb-10">
+    <div class="grid grid-cols-3 gap-2 sm:gap-4 items-end">
+      {% set medals = [
+        {'emoji':'🥈','ring':'ring-slate-300','h':'h-28 sm:h-36','order':'order-1'},
+        {'emoji':'🥇','ring':'ring-laranja-gold','h':'h-36 sm:h-48','order':'order-2'},
+        {'emoji':'🥉','ring':'ring-amber-700','h':'h-24 sm:h-32','order':'order-3'}
+      ] %}
+      {% set podium = [desbravadores[1] if desbravadores|length>1 else none, desbravadores[0], desbravadores[2] if desbravadores|length>2 else none] %}
+      {% for d in podium %}
+        {% set m = medals[loop.index0] %}
+        <div class="{{ m.order }} flex flex-col items-center">
+          {% if d %}
+          <div class="text-3xl sm:text-4xl mb-1">{{ m.emoji }}</div>
+          <div class="w-full glass rounded-t-2xl {{ m.h }} flex flex-col items-center justify-end p-3 ring-1 {{ m.ring }} card-glow">
+            <p class="font-bold text-sm sm:text-base text-center leading-tight truncate w-full">{{ d.nome }}</p>
+            <p class="text-[10px] sm:text-xs text-slate-400 mb-2">{{ d.unidade }}</p>
+            <p class="font-display font-black text-xl sm:text-2xl gold-text">{{ d.pontuacao_total }}</p>
+          </div>
+          {% else %}
+          <div class="w-full glass rounded-t-2xl {{ m.h }} opacity-30 flex items-end justify-center pb-3 text-slate-500 text-xs">—</div>
+          {% endif %}
         </div>
-        {% else %}
-        <div class="w-full glass rounded-t-2xl {{ m.h }} opacity-30 flex items-end justify-center pb-3 text-slate-500 text-xs">—</div>
-        {% endif %}
-      </div>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-<!-- Filtro -->
-<section class="max-w-4xl mx-auto px-4 mb-5">
-  <div class="flex flex-wrap gap-2 justify-center">
-    {% set chips = ['Todas'] + unidades %}
-    {% for u in chips %}
-      <a href="{{ url_for('index', unidade=u) }}"
-         class="px-4 py-2 rounded-full text-sm font-semibold transition border
-         {% if filtro==u %}bg-laranja text-black border-laranja shadow-lg shadow-laranja/30{% else %}glass text-slate-300 border-white/10 hover:border-laranja/50{% endif %}">
-        {{ u }}
-      </a>
-    {% endfor %}
-  </div>
-</section>
+  <!-- Filtro -->
+  <section class="max-w-4xl mx-auto px-4 mb-5">
+    <div class="flex flex-wrap gap-2 justify-center">
+      {% set chips = ['Todas'] + unidades %}
+      {% for u in chips %}
+        <a href="{{ url_for('index', unidade=u) }}"
+           class="px-4 py-2 rounded-full text-sm font-semibold transition border
+           {% if filtro==u %}bg-laranja text-black border-laranja shadow-lg shadow-laranja/30{% else %}glass text-slate-300 border-white/10 hover:border-laranja/50{% endif %}">
+          {{ u }}
+        </a>
+      {% endfor %}
+    </div>
+  </section>
 
-<!-- Tabela ranking -->
-<section class="max-w-4xl mx-auto px-4 pb-12">
-  <div class="glass card-glow rounded-2xl overflow-hidden border border-white/5">
-    <div class="hidden sm:grid grid-cols-12 px-5 py-3 text-[11px] uppercase tracking-widest text-slate-400 border-b border-white/5">
-      <span class="col-span-2">Pos.</span>
-      <span class="col-span-6">Desbravador</span>
-      <span class="col-span-2">Unidade</span>
-      <span class="col-span-2 text-right">Pontos</span>
+  <!-- Tabela ranking desbravadores -->
+  <section class="max-w-4xl mx-auto px-4 pb-4">
+    <div class="glass card-glow rounded-2xl overflow-hidden border border-white/5">
+      <div class="hidden sm:grid grid-cols-12 px-5 py-3 text-[11px] uppercase tracking-widest text-slate-400 border-b border-white/5">
+        <span class="col-span-2">Pos.</span>
+        <span class="col-span-6">Desbravador</span>
+        <span class="col-span-2">Unidade</span>
+        <span class="col-span-2 text-right">Pontos</span>
+      </div>
+      {% for d in desbravadores %}
+      <div class="grid grid-cols-12 items-center px-5 py-3.5 border-b border-white/5 last:border-0 hover:bg-white/5 transition">
+        <div class="col-span-3 sm:col-span-2">
+          {% if loop.index <= 3 %}<span class="text-xl">{{ ['🥇','🥈','🥉'][loop.index0] }}</span>
+          {% else %}<span class="inline-flex w-8 h-8 items-center justify-center rounded-full glass text-sm font-bold text-slate-300">{{ loop.index }}</span>{% endif %}
+        </div>
+        <div class="col-span-6 sm:col-span-6 min-w-0">
+          <p class="font-semibold truncate">{{ d.nome }}</p>
+          <p class="sm:hidden text-xs text-slate-400">{{ d.unidade }}</p>
+        </div>
+        <div class="hidden sm:block col-span-2">
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-roxo/30 text-roxo-light border border-roxo/40">{{ d.unidade }}</span>
+        </div>
+        <div class="col-span-3 sm:col-span-2 text-right">
+          <span class="font-display font-black text-lg sm:text-xl gold-text">{{ d.pontuacao_total }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="px-5 py-12 text-center text-slate-400">
+        <p class="text-4xl mb-2">🏆</p><p>Nenhum desbravador nessa categoria ainda.</p>
+      </div>
+      {% endfor %}
     </div>
-    {% for d in desbravadores %}
-    <div class="grid grid-cols-12 items-center px-5 py-3.5 border-b border-white/5 last:border-0 hover:bg-white/5 transition rise"
-         style="animation-delay: {{ loop.index0 * 30 }}ms">
-      <div class="col-span-3 sm:col-span-2">
-        {% if loop.index <= 3 %}
-          <span class="text-xl">{{ ['🥇','🥈','🥉'][loop.index0] }}</span>
+  </section>
+</div>
+
+<!-- ====================== ABA DIRETORIA ====================== -->
+<div id="aba-dir" class="hidden">
+  <section class="max-w-4xl mx-auto px-4 mb-4 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-roxo/40 text-roxo-light text-xs font-semibold tracking-widest uppercase">
+      👑 Ranking da Diretoria · Monarca & Gorila
+    </div>
+  </section>
+  <section class="max-w-4xl mx-auto px-4 pb-4">
+    <div class="glass card-glow rounded-2xl overflow-hidden border border-white/5">
+      <div class="hidden sm:grid grid-cols-12 px-5 py-3 text-[11px] uppercase tracking-widest text-slate-400 border-b border-white/5">
+        <span class="col-span-2">Pos.</span>
+        <span class="col-span-6">Nome</span>
+        <span class="col-span-2">Unidade</span>
+        <span class="col-span-2 text-right">Pontos</span>
+      </div>
+      {% for d in diretoria %}
+      <div class="grid grid-cols-12 items-center px-5 py-3.5 border-b border-white/5 last:border-0 hover:bg-white/5 transition">
+        <div class="col-span-3 sm:col-span-2">
+          {% if loop.index <= 3 %}<span class="text-xl">{{ ['🥇','🥈','🥉'][loop.index0] }}</span>
+          {% else %}<span class="inline-flex w-8 h-8 items-center justify-center rounded-full glass text-sm font-bold text-slate-300">{{ loop.index }}</span>{% endif %}
+        </div>
+        <div class="col-span-6 sm:col-span-6 min-w-0">
+          <p class="font-semibold truncate">{{ d.nome }}</p>
+          <p class="sm:hidden text-xs text-slate-400">{{ d.unidade }}</p>
+        </div>
+        <div class="hidden sm:block col-span-2">
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-laranja/20 text-laranja-light border border-laranja/40">{{ d.unidade }}</span>
+        </div>
+        <div class="col-span-3 sm:col-span-2 text-right">
+          <span class="font-display font-black text-lg sm:text-xl gold-text">{{ d.pontuacao_total }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="px-5 py-12 text-center text-slate-400">
+        <p class="text-4xl mb-2">👑</p><p>Nenhum integrante da diretoria cadastrado ainda.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<!-- ====================== MURAL DE RECADOS ====================== -->
+<section class="max-w-4xl mx-auto px-4 pt-6 pb-12">
+  <h2 class="text-center font-display font-black text-2xl gold-text mb-1">💌 Recadinhos da Diretoria</h2>
+  <p class="text-center text-slate-400 text-xs mb-6">Mensagens de incentivo e pontos a melhorar</p>
+
+  {% if recados %}
+  <div class="grid sm:grid-cols-2 gap-3">
+    {% for r in recados %}
+    <div class="glass rounded-2xl p-4 border-l-4 {% if r.tipo=='elogio' %}border-laranja-gold{% else %}border-roxo{% endif %} border-y border-r border-white/5">
+      <div class="flex items-center gap-2 mb-2">
+        {% if r.tipo=='elogio' %}
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-laranja/20 text-laranja-gold">⭐ Parabéns</span>
         {% else %}
-          <span class="inline-flex w-8 h-8 items-center justify-center rounded-full glass text-sm font-bold text-slate-300">{{ loop.index }}</span>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-roxo/30 text-roxo-light">📈 A melhorar</span>
         {% endif %}
+        <span class="text-[10px] text-slate-500 ml-auto">{{ r.data }}</span>
       </div>
-      <div class="col-span-6 sm:col-span-6 min-w-0">
-        <p class="font-semibold truncate">{{ d.nome }}</p>
-        <p class="sm:hidden text-xs text-slate-400">{{ d.unidade }}</p>
-      </div>
-      <div class="hidden sm:block col-span-2">
-        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-roxo/30 text-roxo-light border border-roxo/40">{{ d.unidade }}</span>
-      </div>
-      <div class="col-span-3 sm:col-span-2 text-right">
-        <span class="font-display font-black text-lg sm:text-xl gold-text">{{ d.pontuacao_total }}</span>
-      </div>
-    </div>
-    {% else %}
-    <div class="px-5 py-12 text-center text-slate-400">
-      <p class="text-4xl mb-2">🏆</p>
-      <p>Nenhum desbravador nessa categoria ainda.</p>
+      <p class="text-sm text-slate-200 leading-relaxed">{{ r.texto }}</p>
+      <p class="text-[11px] text-slate-500 mt-2">— {{ r.autor }}</p>
     </div>
     {% endfor %}
   </div>
-  <p class="text-center mt-6">
+  {% else %}
+  <div class="glass rounded-2xl p-8 text-center text-slate-400 border border-white/5">
+    <p class="text-3xl mb-2">💌</p><p class="text-sm">Nenhum recado publicado ainda.</p>
+  </div>
+  {% endif %}
+
+  <p class="text-center mt-8">
     <a href="{{ url_for('admin') }}" class="text-xs text-slate-500 hover:text-laranja transition">Acesso da Diretoria →</a>
   </p>
 </section>
+
+<script>
+  function mostrarAba(qual){
+    const desb = document.getElementById('aba-desb');
+    const dir  = document.getElementById('aba-dir');
+    const tD   = document.getElementById('tab-desb');
+    const tG   = document.getElementById('tab-dir');
+    const on  = 'bg-laranja text-black shadow-lg shadow-laranja/30';
+    const off = 'text-slate-300 hover:text-white';
+    if(qual==='desb'){
+      desb.classList.remove('hidden'); dir.classList.add('hidden');
+      tD.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + on;
+      tG.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + off;
+    } else {
+      dir.classList.remove('hidden'); desb.classList.add('hidden');
+      tG.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + on;
+      tD.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + off;
+    }
+  }
+</script>
 
 {% endblock %}
