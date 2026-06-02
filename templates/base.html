@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Oscar dos Desbravadores{% endblock %} — {{ clube.nome }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            roxo:   { DEFAULT:'#7c3aed', dark:'#4c1d95', deep:'#2e1065' },
+            laranja:{ DEFAULT:'#f97316', light:'#fb923c', gold:'#fbbf24' },
+          },
+          fontFamily: {
+            display: ['Cinzel','serif'],
+            sans: ['Inter','sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body{
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(124,58,237,.45), transparent 60%),
+        radial-gradient(900px 500px at 100% 10%, rgba(249,115,22,.18), transparent 55%),
+        #0b0712;
+      background-attachment: fixed;
+    }
+    .gold-text{
+      background:linear-gradient(120deg,#fbbf24,#f97316,#fbbf24);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+    .card-glow{ box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 20px 50px -20px rgba(124,58,237,.6); }
+    .shimmer{ background-size:200% auto; animation:sh 4s linear infinite; }
+    @keyframes sh{ to{ background-position:200% center; } }
+    .rise{ animation:rise .5s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes rise{ from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+    .glass{ background:rgba(30,20,50,.55); backdrop-filter:blur(12px); }
+    ::selection{ background:#f97316; color:#0b0712; }
+  </style>
+</head>
+<body class="font-sans text-slate-100 min-h-screen">
+  {% block body %}{% endblock %}
+  <footer class="text-center py-8 text-xs text-slate-500">
+    ★ {{ clube.nome }} · {{ clube.associacao }} ★
+  </footer>
+</body>
+</html>

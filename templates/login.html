@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Acesso Diretoria{% endblock %}
+{% block body %}
+
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm glass card-glow rounded-3xl p-8 border border-white/10 rise text-center">
+    <div class="mx-auto mb-4 w-24 h-24 rounded-full p-1 bg-gradient-to-br from-laranja via-laranja-gold to-roxo shadow-[0_0_35px_-5px_rgba(249,115,22,.7)]">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="w-full h-full object-cover rounded-full bg-[#2e1065]">
+    </div>
+    <h1 class="font-display font-black text-2xl gold-text shimmer">Painel da Diretoria</h1>
+    <p class="text-slate-400 text-sm mt-1 mb-6">{{ clube.nome }}</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="mb-4 text-sm rounded-xl px-4 py-2.5 {% if cat=='erro' %}bg-red-500/15 text-red-300 border border-red-500/30{% else %}bg-green-500/15 text-green-300 border border-green-500/30{% endif %}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('admin') }}" class="space-y-4">
+      <input type="password" name="senha" placeholder="Senha de acesso" autofocus required
+             class="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-center tracking-widest focus:outline-none focus:border-laranja transition">
+      <button class="w-full bg-laranja hover:bg-laranja-light text-black font-bold py-3 rounded-xl transition shadow-lg shadow-laranja/30">
+        Entrar
+      </button>
+    </form>
+
+    <p class="text-xs text-slate-500 mt-6">Maira · Suelen · Eulene</p>
+    <a href="{{ url_for('index') }}" class="text-xs text-slate-500 hover:text-laranja mt-3 inline-block transition">← Voltar ao ranking</a>
+  </div>
+</div>
+
+{% endblock %}

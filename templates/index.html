@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Painel de Líderes{% endblock %}
+{% block body %}
+
+<header class="text-center pt-10 pb-6 px-4 rise">
+  <div class="mx-auto mb-5 w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-br from-laranja via-laranja-gold to-roxo shadow-[0_0_45px_-5px_rgba(249,115,22,.7)]">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="{{ clube.nome }}"
+         class="w-full h-full object-cover rounded-full bg-[#2e1065]">
+  </div>
+  <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-laranja/30 text-laranja-gold text-xs font-semibold tracking-[.2em] uppercase mb-5">
+    ★ Oscar de Fim de Ano · 2026 ★
+  </div>
+  <h1 class="font-display font-black text-4xl sm:text-6xl gold-text shimmer leading-tight">
+    {{ clube.nome }}
+  </h1>
+  <p class="mt-3 text-slate-300/80 text-sm sm:text-base tracking-wide">{{ clube.associacao }}</p>
+</header>
+
+<!-- Stats -->
+<section class="max-w-4xl mx-auto px-4 grid grid-cols-2 gap-3 sm:gap-4 mb-8">
+  <div class="glass card-glow rounded-2xl p-4 sm:p-5 text-center border border-white/5 rise">
+    <p class="text-3xl sm:text-4xl font-extrabold text-laranja-gold">{{ total_part }}</p>
+    <p class="text-[11px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">Desbravadores</p>
+  </div>
+  <div class="glass card-glow rounded-2xl p-4 sm:p-5 text-center border border-white/5 rise">
+    <p class="text-3xl sm:text-4xl font-extrabold text-roxo-light">{{ total_pts }}</p>
+    <p class="text-[11px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">Pontos em jogo</p>
+  </div>
+</section>
+
+<!-- Pódio -->
+{% if desbravadores|length >= 1 %}
+<section class="max-w-4xl mx-auto px-4 mb-10">
+  <div class="grid grid-cols-3 gap-2 sm:gap-4 items-end">
+    {% set medals = [
+      {'emoji':'🥈','ring':'ring-slate-300','h':'h-28 sm:h-36','order':'order-1'},
+      {'emoji':'🥇','ring':'ring-laranja-gold','h':'h-36 sm:h-48','order':'order-2'},
+      {'emoji':'🥉','ring':'ring-amber-700','h':'h-24 sm:h-32','order':'order-3'}
+    ] %}
+    {% set podium = [desbravadores[1] if desbravadores|length>1 else none, desbravadores[0], desbravadores[2] if desbravadores|length>2 else none] %}
+    {% for d in podium %}
+      {% set m = medals[loop.index0] %}
+      <div class="{{ m.order }} flex flex-col items-center">
+        {% if d %}
+        <div class="text-3xl sm:text-4xl mb-1">{{ m.emoji }}</div>
+        <div class="w-full glass rounded-t-2xl {{ m.h }} flex flex-col items-center justify-end p-3 ring-1 {{ m.ring }} card-glow rise">
+          <p class="font-bold text-sm sm:text-base text-center leading-tight truncate w-full">{{ d.nome }}</p>
+          <p class="text-[10px] sm:text-xs text-slate-400 mb-2">{{ d.unidade }}</p>
+          <p class="font-display font-black text-xl sm:text-2xl gold-text">{{ d.pontuacao_total }}</p>
+        </div>
+        {% else %}
+        <div class="w-full glass rounded-t-2xl {{ m.h }} opacity-30 flex items-end justify-center pb-3 text-slate-500 text-xs">—</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Filtro -->
+<section class="max-w-4xl mx-auto px-4 mb-5">
+  <div class="flex flex-wrap gap-2 justify-center">
+    {% set chips = ['Todas'] + unidades %}
+    {% for u in chips %}
+      <a href="{{ url_for('index', unidade=u) }}"
+         class="px-4 py-2 rounded-full text-sm font-semibold transition border
+         {% if filtro==u %}bg-laranja text-black border-laranja shadow-lg shadow-laranja/30{% else %}glass text-slate-300 border-white/10 hover:border-laranja/50{% endif %}">
+        {{ u }}
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Tabela ranking -->
+<section class="max-w-4xl mx-auto px-4 pb-12">
+  <div class="glass card-glow rounded-2xl overflow-hidden border border-white/5">
+    <div class="hidden sm:grid grid-cols-12 px-5 py-3 text-[11px] uppercase tracking-widest text-slate-400 border-b border-white/5">
+      <span class="col-span-2">Pos.</span>
+      <span class="col-span-6">Desbravador</span>
+      <span class="col-span-2">Unidade</span>
+      <span class="col-span-2 text-right">Pontos</span>
+    </div>
+    {% for d in desbravadores %}
+    <div class="grid grid-cols-12 items-center px-5 py-3.5 border-b border-white/5 last:border-0 hover:bg-white/5 transition rise"
+         style="animation-delay: {{ loop.index0 * 30 }}ms">
+      <div class="col-span-3 sm:col-span-2">
+        {% if loop.index <= 3 %}
+          <span class="text-xl">{{ ['🥇','🥈','🥉'][loop.index0] }}</span>
+        {% else %}
+          <span class="inline-flex w-8 h-8 items-center justify-center rounded-full glass text-sm font-bold text-slate-300">{{ loop.index }}</span>
+        {% endif %}
+      </div>
+      <div class="col-span-6 sm:col-span-6 min-w-0">
+        <p class="font-semibold truncate">{{ d.nome }}</p>
+        <p class="sm:hidden text-xs text-slate-400">{{ d.unidade }}</p>
+      </div>
+      <div class="hidden sm:block col-span-2">
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-roxo/30 text-roxo-light border border-roxo/40">{{ d.unidade }}</span>
+      </div>
+      <div class="col-span-3 sm:col-span-2 text-right">
+        <span class="font-display font-black text-lg sm:text-xl gold-text">{{ d.pontuacao_total }}</span>
+      </div>
+    </div>
+    {% else %}
+    <div class="px-5 py-12 text-center text-slate-400">
+      <p class="text-4xl mb-2">🏆</p>
+      <p>Nenhum desbravador nessa categoria ainda.</p>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="text-center mt-6">
+    <a href="{{ url_for('admin') }}" class="text-xs text-slate-500 hover:text-laranja transition">Acesso da Diretoria →</a>
+  </p>
+</section>
+
+{% endblock %}

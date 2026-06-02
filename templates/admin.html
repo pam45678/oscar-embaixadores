@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Painel Administrativo{% endblock %}
+{% block body %}
+
+<header class="max-w-5xl mx-auto px-4 pt-8 pb-4 flex items-center justify-between rise">
+  <div class="flex items-center gap-3">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo"
+         class="w-12 h-12 rounded-full object-cover ring-2 ring-laranja/50 bg-[#2e1065] hidden sm:block">
+    <div>
+      <h1 class="font-display font-black text-2xl sm:text-3xl gold-text">Painel da Diretoria</h1>
+      <p class="text-slate-400 text-sm">{{ clube.nome }}</p>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('index') }}" class="glass border border-white/10 hover:border-laranja/50 px-4 py-2 rounded-xl text-sm transition">Ver ranking</a>
+    <a href="{{ url_for('sair') }}" class="bg-red-500/20 text-red-300 border border-red-500/30 px-4 py-2 rounded-xl text-sm hover:bg-red-500/30 transition">Sair</a>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="max-w-5xl mx-auto px-4 mb-2">
+      <div class="text-sm rounded-xl px-4 py-2.5 {% if cat=='erro' %}bg-red-500/15 text-red-300 border border-red-500/30{% else %}bg-green-500/15 text-green-300 border border-green-500/30{% endif %}">{{ msg }}</div>
+    </div>
+  {% endfor %}
+{% endwith %}
+
+<main class="max-w-5xl mx-auto px-4 grid md:grid-cols-2 gap-4 sm:gap-6 mt-4">
+
+  <!-- Cadastrar -->
+  <section class="glass card-glow rounded-2xl p-6 border border-white/5 rise">
+    <h2 class="font-bold text-lg mb-1 flex items-center gap-2"><span class="text-laranja">＋</span> Cadastrar Desbravador</h2>
+    <p class="text-xs text-slate-400 mb-5">Apenas unidades de desbravadores entram no ranking.</p>
+    <form method="POST" action="{{ url_for('cadastrar') }}" class="space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wider text-slate-400">Nome</label>
+        <input name="nome" required placeholder="Nome completo"
+               class="mt-1 w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 focus:outline-none focus:border-laranja transition">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wider text-slate-400">Unidade</label>
+        <select name="unidade" required
+                class="mt-1 w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 focus:outline-none focus:border-laranja transition">
+          <option value="" disabled selected>Selecione...</option>
+          {% for u in unidades %}<option value="{{ u }}">{{ u }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="w-full bg-roxo hover:bg-roxo-light text-white font-bold py-3 rounded-xl transition shadow-lg shadow-roxo/30">Cadastrar</button>
+    </form>
+  </section>
+
+  <!-- Lançar pontos -->
+  <section class="glass card-glow rounded-2xl p-6 border border-white/5 rise">
+    <h2 class="font-bold text-lg mb-1 flex items-center gap-2"><span class="text-laranja-gold">★</span> Lançar Pontuação</h2>
+    <p class="text-xs text-slate-400 mb-5">Soma automaticamente no total e salva no histórico.</p>
+    <form method="POST" action="{{ url_for('lancar') }}" class="space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wider text-slate-400">Desbravador</label>
+        <select name="desbravador_id" required
+                class="mt-1 w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 focus:outline-none focus:border-laranja transition">
+          <option value="" disabled selected>Selecione...</option>
+          {% for d in desbravadores %}
+            <option value="{{ d.id }}">{{ d.nome }} — {{ d.unidade }} ({{ d.pontuacao_total }} pts)</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="col-span-1">
+          <label class="text-xs uppercase tracking-wider text-slate-400">Pontos</label>
+          <input name="pontos" type="number" required placeholder="10"
+                 class="mt-1 w-full bg-black/40 border border-white/15 rounded-xl px-3 py-3 focus:outline-none focus:border-laranja transition">
+        </div>
+        <div class="col-span-2">
+          <label class="text-xs uppercase tracking-wider text-slate-400">Motivo</label>
+          <input name="motivo" required placeholder="Presença, Classe concluída..."
+                 class="mt-1 w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 focus:outline-none focus:border-laranja transition">
+        </div>
+      </div>
+      <button class="w-full bg-laranja hover:bg-laranja-light text-black font-bold py-3 rounded-xl transition shadow-lg shadow-laranja/30">Lançar Pontos</button>
+    </form>
+  </section>
+
+  <!-- Histórico -->
+  <section class="md:col-span-2 glass card-glow rounded-2xl p-6 border border-white/5 rise">
+    <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><span class="text-roxo-light">🕑</span> Últimos Lançamentos</h2>
+    {% if historico %}
+    <div class="space-y-2">
+      {% for h in historico %}
+      <div class="flex items-center justify-between gap-3 bg-black/30 rounded-xl px-4 py-3 border border-white/5">
+        <div class="min-w-0">
+          <p class="font-semibold truncate">{{ h.nome }} <span class="text-xs text-slate-500">· {{ h.unidade }}</span></p>
+          <p class="text-xs text-slate-400 truncate">{{ h.motivo }} · {{ h.data }}</p>
+        </div>
+        <span class="shrink-0 font-display font-black text-lg {% if h.pontos >= 0 %}text-green-400{% else %}text-red-400{% endif %}">{{ '%+d'|format(h.pontos) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-400 text-sm text-center py-6">Nenhum lançamento ainda.</p>
+    {% endif %}
+  </section>
+
+</main>
+<div class="h-10"></div>
+{% endblock %}
