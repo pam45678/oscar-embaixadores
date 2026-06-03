@@ -3,5 +3,10 @@ services:
     name: oscar-embaixadores
     runtime: python
     plan: free
-    buildCommand: "pip install -r requirements.txt && python seed_real.py"
+    # IMPORTANTE: o build NÃO roda mais nenhum seed.
+    # Os dados ficam no Postgres (Neon) e nunca são apagados.
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn app:app"
+    envVars:
+      - key: DATABASE_URL
+        sync: false

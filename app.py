@@ -1,4 +1,3 @@
-import sqlite3
 import os
 from datetime import datetime
 from functools import wraps
@@ -7,17 +6,19 @@ from flask import (
     url_for, session, flash, g
 )
 
+import db as database
+
 # ----------------------------------------------------------------------------
 # CONFIGURAÇÃO
 # ----------------------------------------------------------------------------
 app = Flask(__name__)
-app.secret_key = "embaixadores-sertaozinho-oscar-2026"
+app.secret_key = os.environ.get(
+    "SECRET_KEY", "embaixadores-sertaozinho-oscar-2026"
+)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "clube.db")
-
-# Senha do painel administrativo (hardcoded conforme solicitado)
-ADMIN_PASSWORD = "1986"
-DIRETORIA_PASSWORD = "Embaixadores@10"
+# Senha do painel administrativo
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "1986")
+DIRETORIA_PASSWORD = os.environ.get("DIRETORIA_PASSWORD", "Embaixadores@10")
 
 # Informações do clube
 CLUBE = {
@@ -33,12 +34,11 @@ UNIDADES_DIRETORIA = ["Monarca", "Gorila"]
 
 
 # ----------------------------------------------------------------------------
-# BANCO DE DADOS (SQLite)
+# BANCO DE DADOS (Postgres em produção, SQLite no fallback local)
 # ----------------------------------------------------------------------------
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
+        g.db = database.connect()
     return g.db
 
 
@@ -49,48 +49,8 @@ def close_db(exception):
         db.close()
 
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS desbravadores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            unidade TEXT NOT NULL,
-            pontuacao_total INTEGER NOT NULL DEFAULT 0
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS historico_pontos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            desbravador_id INTEGER NOT NULL,
-            pontos INTEGER NOT NULL,
-            motivo TEXT NOT NULL,
-            data TEXT NOT NULL,
-            FOREIGN KEY (desbravador_id) REFERENCES desbravadores (id)
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS recados (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tipo TEXT NOT NULL,
-            texto TEXT NOT NULL,
-            autor TEXT,
-            data TEXT NOT NULL
-        )
-        """
-    )
-    conn.commit()
-    conn.close()
-
-
 # Cria as tabelas assim que o app é importado (gunicorn no Render, etc.)
-init_db()
+database.init_db()
 
 
 # ----------------------------------------------------------------------------
@@ -427,6 +387,6 @@ def sair():
 
 # ----------------------------------------------------------------------------
 if __name__ == "__main__":
-    init_db()
+    database.init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
