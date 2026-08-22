@@ -10,6 +10,9 @@ Tudo no app usa as funções daqui, com "?" como placeholder. Quando estamos no
 Postgres, traduzimos "?" pra "%s" automaticamente.
 """
 import os
+import socket
+import time
+from urllib.parse import urlsplit
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 USE_PG = bool(DATABASE_URL)
@@ -54,12 +57,47 @@ class _Cursor:
         return getattr(self._raw, "lastrowid", None)
 
 
+                          # ---------------------------------------------
+                          # CORREÇÃO IPv6 (Render x Neon)
+                          # ---------------------------------------------
+# O Render não tem rota de saída por IPv6. O host do Neon publica endereços
+# IPv6 e IPv4, e o Python escolhia o IPv6 -> "Rede é inacessível" na porta
+# 5432 -> o app quebrava no boot e o site nem abria.
+# Solução: resolver o host só em IPv4 e passar esse IP em "hostaddr", mantendo
+# o "host" original na string de conexão (o SSL/SNI do Neon continua ok).
+_ipv4_cache = {"ip": None, "quando": 0}
+_IPV4_TTL = 300  # segundos
+
+
+def _forcar_ipv4():
+    """Descobre o IPv4 do host do banco. Devolve {} se não conseguir."""
+    agora = time.time()
+    if _ipv4_cache["ip"] and (agora - _ipv4_cache["quando"]) < _IPV4_TTL:
+        return {"hostaddr": _ipv4_cache["ip"]}
+    try:
+        host = urlsplit(DATABASE_URL).hostname
+        if not host:
+            return {}
+        ip = socket.getaddrinfo(host, 5432, socket.AF_INET)[0][4][0]
+        _ipv4_cache["ip"] = ip
+        _ipv4_cache["quando"] = agora
+        return {"hostaddr": ip}
+    except Exception:
+        # Sem IPv4 disponível: deixa o libpq tentar do jeito normal.
+        return {}
+
+
 class Connection:
     """Conexão unificada com .execute / .commit / .close."""
 
     def __init__(self):
         if USE_PG:
-            self._conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+            self._conn = psycopg.connect(
+                DATABASE_URL,
+                row_factory=dict_row,
+                connect_timeout=10,
+                **_forcar_ipv4(),
+            )
         else:
             self._conn = sqlite3.connect(SQLITE_PATH)
             self._conn.row_factory = sqlite3.Row

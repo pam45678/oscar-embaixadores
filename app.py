@@ -49,8 +49,33 @@ def close_db(exception):
         db.close()
 
 
-# Cria as tabelas assim que o app é importado (gunicorn no Render, etc.)
-database.init_db()
+# Cria as tabelas assim que o app é importado (gunicorn no Render, etc.).
+# IMPORTANTE: se o banco estiver fora do ar neste instante, o app NÃO pode
+# morrer no boot — senão o Render fica sem nada pra servir e o site nem abre.
+# Ele sobe, avisa no log, e tenta de novo na primeira visita.
+BANCO_INICIADO = False
+
+
+def garantir_banco():
+    global BANCO_INICIADO
+    if BANCO_INICIADO:
+        return True
+    try:
+        database.init_db()
+        BANCO_INICIADO = True
+        print("[banco] tabelas verificadas com sucesso", flush=True)
+    except Exception as erro:
+        print(f"[banco] FALHA ao iniciar: {erro}", flush=True)
+    return BANCO_INICIADO
+
+
+garantir_banco()
+
+
+@app.route("/health")
+def health():
+    """Checagem de saúde que NÃO toca no banco: se isso responde, o app subiu."""
+    return {"status": "ok", "banco_iniciado": BANCO_INICIADO}, 200
 
 
 # ----------------------------------------------------------------------------
