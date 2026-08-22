@@ -54,18 +54,27 @@ def close_db(exception):
 # morrer no boot — senão o Render fica sem nada pra servir e o site nem abre.
 # Ele sobe, avisa no log, e tenta de novo na primeira visita.
 BANCO_INICIADO = False
+BANCO_ERRO = None
+
+
+def _censurar(texto):
+    """Remove usuario:senha de qualquer string de conexão que apareça no erro."""
+    import re
+    return re.sub(r"//[^@/\s]+@", "//***:***@", str(texto))
 
 
 def garantir_banco():
-    global BANCO_INICIADO
+    global BANCO_INICIADO, BANCO_ERRO
     if BANCO_INICIADO:
         return True
     try:
         database.init_db()
         BANCO_INICIADO = True
+        BANCO_ERRO = None
         print("[banco] tabelas verificadas com sucesso", flush=True)
     except Exception as erro:
-        print(f"[banco] FALHA ao iniciar: {erro}", flush=True)
+        BANCO_ERRO = f"{type(erro).__name__}: {_censurar(erro)}"
+        print(f"[banco] FALHA ao iniciar: {BANCO_ERRO}", flush=True)
     return BANCO_INICIADO
 
 
@@ -75,7 +84,13 @@ garantir_banco()
 @app.route("/health")
 def health():
     """Checagem de saúde que NÃO toca no banco: se isso responde, o app subiu."""
-    return {"status": "ok", "banco_iniciado": BANCO_INICIADO}, 200
+    garantir_banco()
+    return {
+        "status": "ok",
+        "banco_iniciado": BANCO_INICIADO,
+        "erro_banco": BANCO_ERRO,
+        "tem_database_url": bool(os.environ.get("DATABASE_URL")),
+    }, 200
 
 
 # ----------------------------------------------------------------------------
