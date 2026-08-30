@@ -96,6 +96,10 @@ class Connection:
                 DATABASE_URL,
                 row_factory=dict_row,
                 connect_timeout=10,
+                # prepare_threshold=None: obrigatório quando o banco está atrás
+                # de um pooler (Supabase/Supavisor, PgBouncer). Sem isso o
+                # psycopg cria prepared statements e o pooler quebra.
+                prepare_threshold=None,
                 **_forcar_ipv4(),
             )
         else:
